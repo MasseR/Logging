@@ -43,4 +43,3 @@ set_error_handler(function($errno, $errstr) {
         "backtrace" => $bt));
     return true;
 });
-require("test.php");
