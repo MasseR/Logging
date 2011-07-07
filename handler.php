@@ -5,18 +5,26 @@ require_once("class.krumo.php"); // Dependency on krumo
 function convertArg($a)
 {
     if(is_callable($a))
+    {
         $a = "Callable";
+    }
     if(is_array($a))
-        $a = array_map('convertArgs', $a);
+    {
+        $a = convertArray($a);
+    }
     if(is_object($a))
         $a = "Object";
     return $a;
 }
 
+function convertArray($x)
+{
+    return array_map('convertArg', $x);
+}
+
 function convertArgs($x)
 {
-    if(isset($x['args']))
-        $x['args'] = array_map('convertArg', $x['args']);
+    $x['args'] = convertArray(coalesce($x['args'], array()));
     return $x;
 }
 
@@ -72,24 +80,45 @@ function errorPage($id, $info)
 <?php
 }
 
+function formatStackTrace()
+{
+        return array_map('convertArgs', debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT));
+}
+
+function errorInfo($errstr)
+{
+        $bt = formatStackTrace();
+        $time = time();
+        return array(
+            "time" => $time,
+            "msg" => $errstr,
+            "post" => escapeInput($_POST),
+            "get" => escapeInput($_GET),
+            "uri" => coalesce($_SERVER["REQUEST_URI"]),
+            "backtrace" => $bt);
+}
+
+function saveInfo($id, $info)
+{
+    $yaml = $id . ".yaml";
+    _yaml_emit_file($yaml, $info);
+}
+
+function makeId($bt, $errstr)
+{
+    return md5(time() . $errstr . combineFunctionNames($bt));
+}
+
 function initializeErrorHandler($precall = null)
 {
     if(is_callable($precall))
         call_user_func($precall);
     set_error_handler(function($errno, $errstr) {
-        $bt = array_map('convertArgs', array_splice(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT), 1));
-        $time = time();
-        $id = md5($time . $errstr . combineFunctionNames($bt));
-        $yaml = $id . ".yaml";
-        $info = array(
-            "time" => $time,
-            "msg" => $errstr,
-            "errno" => $errno,
-            "post" => escapeInput($_POST),
-            "get" => escapeInput($_GET),
-            "uri" => coalesce($_SERVER["REQUEST_URI"]),
-            "backtrace" => $bt);
-        _yaml_emit_file($yaml, $info);
+        $info = errorInfo($errstr);
+        $info["errno"] = $errno;
+        $info["backtrace"] = array_splice($info["backtrace"], 3);
+        $id = makeId($info['backtrace'], $errstr);
+        saveInfo($id, $info);
         errorPage($id, $info);
         return true;
     });
