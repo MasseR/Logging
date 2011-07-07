@@ -39,7 +39,7 @@ set_error_handler(function($errno, $errstr) {
     echo _yaml_emit_file($yaml, array(
         "time" => $time,
         "msg" => $errstr,
-        "no" => $errno,
+        "errno" => $errno,
         "backtrace" => $bt));
     return true;
 });
