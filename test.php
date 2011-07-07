@@ -1,6 +1,7 @@
 <?php
 
 require("handler.php");
+initializeErrorHandler();
 
 interface Hello
 {
@@ -22,3 +23,4 @@ class Bar extends Foo
 }
 
 new Bar();
+

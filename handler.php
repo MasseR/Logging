@@ -72,20 +72,25 @@ function errorPage($id, $info)
 <?php
 }
 
-set_error_handler(function($errno, $errstr) {
-    $bt = array_map('convertArgs', array_splice(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT), 1));
-    $time = time();
-    $id = md5($time . $errstr . combineFunctionNames($bt));
-    $yaml = $id . ".yaml";
-    $info = array(
-        "time" => $time,
-        "msg" => $errstr,
-        "errno" => $errno,
-        "post" => escapeInput($_POST),
-        "get" => escapeInput($_GET),
-        "uri" => coalesce($_SERVER["REQUEST_URI"]),
-        "backtrace" => $bt);
-    _yaml_emit_file($yaml, $info);
-    errorPage($id, $info);
-    return true;
-});
+function initializeErrorHandler($precall = null)
+{
+    if(is_callable($precall))
+        call_user_func($precall);
+    set_error_handler(function($errno, $errstr) {
+        $bt = array_map('convertArgs', array_splice(debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT), 1));
+        $time = time();
+        $id = md5($time . $errstr . combineFunctionNames($bt));
+        $yaml = $id . ".yaml";
+        $info = array(
+            "time" => $time,
+            "msg" => $errstr,
+            "errno" => $errno,
+            "post" => escapeInput($_POST),
+            "get" => escapeInput($_GET),
+            "uri" => coalesce($_SERVER["REQUEST_URI"]),
+            "backtrace" => $bt);
+        _yaml_emit_file($yaml, $info);
+        errorPage($id, $info);
+        return true;
+    });
+}
