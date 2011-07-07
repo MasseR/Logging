@@ -51,6 +51,7 @@ function escapeInput($args)
 
 function errorPage($id, $info)
 {
+    header("HTTP/1.0 500 Internal Server Error");
     $bt = array();
     foreach($info["backtrace"] as $stack)
     {
