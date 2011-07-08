@@ -2,18 +2,26 @@
 
 require_once("class.krumo.php"); // Dependency on krumo
 
+/** Convert argument to printable format
+ */
 function convertArg($a)
 {
     if(is_callable($a))
     {
+        // PHP Can't serialize closures
         $a = "Callable";
     }
     if(is_array($a))
     {
+        // Recursively convert arrays
         $a = convertArray($a);
     }
     if(is_object($a))
+    {
+        // Up for debate. Object contents can either be helpful, or there's too
+        // much data that the entire thing becomes unreadable
         $a = "Object";
+    }
     return $a;
 }
 
