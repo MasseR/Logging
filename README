@@ -1,0 +1,35 @@
+A simple utility to save stack traces in yaml format. It can also use the krumo
+library to show the stack trace on screen.
+
+Example of a yaml file it creates:
+
+---
+time: 1310073572
+msg: fread() expects exactly 2 parameters, 1 given
+post: []
+get: []
+uri: ~
+backtrace:
+- file: /home/masse/programming/php/logger/test.php
+  line: 13
+  function: fread
+  args:
+  - foo
+- file: /home/masse/programming/php/logger/test.php
+  line: 21
+  function: __construct
+  class: Foo
+  object: !php/object "O:3:\"Bar\":0:{}"
+  type: ->
+  args:
+  - Callable
+- file: /home/masse/programming/php/logger/test.php
+  line: 25
+  function: __construct
+  class: Bar
+  object: !php/object "O:3:\"Bar\":0:{}"
+  type: ->
+  args: []
+errno: 2
+...
+
