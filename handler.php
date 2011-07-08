@@ -2,6 +2,16 @@
 
 require_once("class.krumo.php"); // Dependency on krumo
 
+function convertParam($refparam)
+{
+    $info = array();
+    $info["name"] = $refparam->getName();
+    if($refparam->isDefaultValueAvailable())
+        $info["default"] = $refparam->getDefaultValue();
+    $info["optional"] = $refparam->isOptional();
+    $info["passedByReference"] = $refparam->isPassedByReference();
+    return $info;
+}
 /** Convert argument to printable format
  */
 function convertArg($a)
@@ -9,7 +19,10 @@ function convertArg($a)
     if(is_callable($a))
     {
         // PHP Can't serialize closures
-        $a = "Callable";
+        $r = new ReflectionFunction($a);
+        $a = array($r->getName() => array(
+            "parameters" => array_map('convertParam', $r->getParameters())
+        ));
     }
     if(is_array($a))
     {
@@ -18,9 +31,10 @@ function convertArg($a)
     }
     if(is_object($a))
     {
-        // Up for debate. Object contents can either be helpful, or there's too
-        // much data that the entire thing becomes unreadable
-        $a = "Object";
+        $r = new ReflectionClass($a);
+        $a = array($r->getName() => array(
+            "properties" => convertArray(get_object_vars($a)),
+            "methods" => $r->getMethods()));
     }
     return $a;
 }
@@ -33,6 +47,8 @@ function convertArray($x)
 function convertArgs($x)
 {
     $x['args'] = convertArray(coalesce($x['args'], array()));
+    if(isset($x['object']))
+        $x['object'] = convertArg($x['object']);
     return $x;
 }
 
@@ -90,20 +106,20 @@ function errorPage($id, $info)
 
 function formatStackTrace()
 {
-        return array_map('convertArgs', debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT));
+    return array_map('convertArgs', debug_backtrace(DEBUG_BACKTRACE_PROVIDE_OBJECT));
 }
 
 function errorInfo($errstr)
 {
-        $bt = formatStackTrace();
-        $time = time();
-        return array(
-            "time" => $time,
-            "msg" => $errstr,
-            "post" => escapeInput($_POST),
-            "get" => escapeInput($_GET),
-            "uri" => coalesce($_SERVER["REQUEST_URI"]),
-            "backtrace" => $bt);
+    $bt = formatStackTrace();
+    $time = time();
+    return array(
+        "time" => $time,
+        "msg" => $errstr,
+        "post" => escapeInput($_POST),
+        "get" => escapeInput($_GET),
+        "uri" => coalesce($_SERVER["REQUEST_URI"]),
+        "backtrace" => $bt);
 }
 
 function saveInfo($id, $info)
